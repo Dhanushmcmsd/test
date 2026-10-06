@@ -32,8 +32,7 @@ export interface SpaceLoginProps {
   glassVariant?: GlassVariant;
 }
 
-export const DEFAULT_ASTRONAUT_IMAGE =
-  "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=600&q=80";
+export const DEFAULT_ASTRONAUT_IMAGE = "/assets/earth.png";
 
 function SparkleStar({
   className,
@@ -379,8 +378,8 @@ export function SpaceLogin({
           >
             <img
               src={astronautSrc}
-              alt="Floating Astronaut"
-              className="w-40 sm:w-44 lg:w-52 h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)] filter contrast-125 select-none"
+              alt="Earth"
+              className="w-40 sm:w-44 lg:w-52 h-auto drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)] select-none"
               draggable={false}
             />
             <motion.div
