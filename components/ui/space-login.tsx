@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, KeyRound, Loader2, Check } from "lucide-react";
-import Link from "next/link";
 import {
   cn,
   GlassInput,
@@ -341,12 +340,12 @@ export function SpaceLogin({
     >
       <CosmicStarfield />
 
-      <Link
+      <a
         href="/"
         className="absolute top-5 left-5 z-30 text-sm font-medium text-neutral-400 hover:text-white transition-colors"
       >
         ← Back to home
-      </Link>
+      </a>
 
       <div className="absolute -bottom-48 sm:-bottom-56 md:-bottom-64 left-1/2 -translate-x-1/2 w-[160vw] max-w-[1900px] h-[480px] sm:h-[550px] md:h-[620px] pointer-events-none z-0">
         <div
