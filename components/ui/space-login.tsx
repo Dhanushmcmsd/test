@@ -12,17 +12,22 @@ import {
 export { cn, Glass, GlassInput, GLASS_PRESETS, useDarkMode } from "@/components/ui/liquid-glass";
 export type { GlassVariant, GlassProps, GlassInputProps } from "@/components/ui/liquid-glass";
 
+export type AuthMode = "signin" | "signup" | "reset";
+
 export interface SpaceLoginProps {
   title?: string;
   subtitle?: string;
   astronautSrc?: string;
+  mode?: AuthMode;
   onSubmit?: (data: {
     email: string;
     password: string;
     rememberMe: boolean;
+    name?: string;
   }) => Promise<void> | void;
   onForgotPassword?: () => void;
   onSignUp?: () => void;
+  onBackToSignIn?: () => void;
   onSocialLogin?: (
     provider: "google" | "github" | "facebook" | "windows" | "passkey"
   ) => void;
@@ -284,22 +289,33 @@ export function SpaceLogin({
   title = "Sign In",
   subtitle,
   astronautSrc = DEFAULT_ASTRONAUT_IMAGE,
+  mode = "signin",
   onSubmit,
   onForgotPassword,
   onSignUp,
+  onBackToSignIn,
   onSocialLogin,
   className,
   defaultEmail = "",
   showSocialButtons = true,
   glassVariant = "default",
 }: SpaceLoginProps) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const copy = {
+    signin: { idle: "Sign In", loading: "Signing in...", success: "Welcome Back!" },
+    signup: { idle: "Create Account", loading: "Creating account...", success: "Account created" },
+    reset: { idle: "Update Password", loading: "Updating...", success: "Password updated" },
+  }[mode];
 
   const handleGlobalMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { clientX, clientY } = e;
@@ -313,17 +329,30 @@ export function SpaceLogin({
     e.preventDefault();
     if (!email || !password || isLoading) return;
 
+    if (mode === "signup" && !name.trim()) {
+      setFormError("Enter your name.");
+      return;
+    }
+    if (password.length < 8) {
+      setFormError("Password must be at least 8 characters.");
+      return;
+    }
+    if ((mode === "signup" || mode === "reset") && password !== confirmPassword) {
+      setFormError("Passwords do not match.");
+      return;
+    }
+
+    setFormError(null);
     setIsLoading(true);
     try {
       if (onSubmit) {
-        await onSubmit({ email, password, rememberMe });
+        await onSubmit({ email, password, rememberMe, name: name.trim() });
       } else {
         await new Promise((resolve) => setTimeout(resolve, 1200));
       }
       setIsSuccess(true);
-      setTimeout(() => setIsSuccess(false), 2500);
     } catch (err) {
-      console.error("Sign in error:", err);
+      setFormError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setIsLoading(false);
     }
@@ -409,6 +438,28 @@ export function SpaceLogin({
           )}
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
+            {mode === "signup" && (
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="space-name"
+                  className="text-base font-semibold text-neutral-200 tracking-wide select-none"
+                >
+                  Name
+                </label>
+                <GlassInput
+                  id="space-name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  placeholder="Ada Lovelace"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  variant={glassVariant}
+                  borderRadius={14}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
               <label
                 htmlFor="space-email"
@@ -420,6 +471,7 @@ export function SpaceLogin({
                 id="space-email"
                 type="email"
                 required
+                autoComplete="email"
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -433,12 +485,13 @@ export function SpaceLogin({
                 htmlFor="space-password"
                 className="text-base font-semibold text-neutral-200 tracking-wide select-none"
               >
-                Password
+                {mode === "reset" ? "New password" : "Password"}
               </label>
               <GlassInput
                 id="space-password"
                 type={showPassword ? "text" : "password"}
                 required
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -461,10 +514,38 @@ export function SpaceLogin({
               />
             </div>
 
+            {(mode === "signup" || mode === "reset") && (
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="space-confirm"
+                  className="text-base font-semibold text-neutral-200 tracking-wide select-none"
+                >
+                  Confirm password
+                </label>
+                <GlassInput
+                  id="space-confirm"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  autoComplete="new-password"
+                  placeholder="••••••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  variant={glassVariant}
+                  borderRadius={14}
+                />
+              </div>
+            )}
+
+            {mode === "signin" && (
             <div className="flex items-center justify-between text-xs sm:text-[13px] pt-1">
-              <label className="flex items-center gap-2 cursor-pointer group select-none">
-                <div
-                  onClick={() => setRememberMe(!rememberMe)}
+              <button
+                type="button"
+                aria-pressed={rememberMe}
+                onClick={() => setRememberMe((value) => !value)}
+                className="flex items-center gap-2 cursor-pointer group select-none"
+              >
+                <span
+                  aria-hidden="true"
                   className={cn(
                     "w-4 h-4 rounded-[4px] border transition-all duration-150 flex items-center justify-center",
                     rememberMe
@@ -473,11 +554,11 @@ export function SpaceLogin({
                   )}
                 >
                   {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
-                </div>
+                </span>
                 <span className="text-neutral-300 group-hover:text-white transition-colors">
                   Remember me
                 </span>
-              </label>
+              </button>
 
               <button
                 type="button"
@@ -487,6 +568,13 @@ export function SpaceLogin({
                 Forget Password ?
               </button>
             </div>
+            )}
+
+            {formError && (
+              <p role="alert" className="text-sm text-red-300 text-center -mb-1">
+                {formError}
+              </p>
+            )}
 
             <motion.button
               type="submit"
@@ -509,7 +597,7 @@ export function SpaceLogin({
                     className="flex items-center gap-2"
                   >
                     <Loader2 className="w-4 h-4 animate-spin text-neutral-300" />
-                    <span>Signing in...</span>
+                    <span>{copy.loading}</span>
                   </motion.div>
                 ) : isSuccess ? (
                   <motion.div
@@ -520,7 +608,7 @@ export function SpaceLogin({
                     className="flex items-center gap-2 text-white"
                   >
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>Welcome Back!</span>
+                    <span>{copy.success}</span>
                   </motion.div>
                 ) : (
                   <motion.span
@@ -529,30 +617,53 @@ export function SpaceLogin({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    Sign In
+                    {copy.idle}
                   </motion.span>
                 )}
               </AnimatePresence>
             </motion.button>
 
             <div className="text-center text-xs sm:text-[13px] text-neutral-400 mt-1">
-              <span>Don’t Have an Account ? </span>
-              <button
-                type="button"
-                onClick={onSignUp}
-                className="text-white font-bold hover:underline underline-offset-4 transition-colors"
-              >
-                Sign Up
-              </button>
+              {mode === "signin" ? (
+                <>
+                  <span>Don’t Have an Account ? </span>
+                  <button
+                    type="button"
+                    onClick={onSignUp}
+                    className="text-white font-bold hover:underline underline-offset-4 transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              ) : mode === "signup" ? (
+                <>
+                  <span>Already have an account? </span>
+                  <button
+                    type="button"
+                    onClick={onSignUp}
+                    className="text-white font-bold hover:underline underline-offset-4 transition-colors"
+                  >
+                    Sign In
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onBackToSignIn}
+                  className="text-white font-bold hover:underline underline-offset-4 transition-colors"
+                >
+                  Back to Sign In
+                </button>
+              )}
             </div>
 
-            {showSocialButtons && (
+            {showSocialButtons && mode !== "reset" && (
               <div className="w-full flex items-center gap-3 my-1">
                 <div className="flex-1 h-[1px] bg-white/[0.08]" />
               </div>
             )}
 
-            {showSocialButtons && (
+            {showSocialButtons && mode !== "reset" && (
               <div className="flex items-center justify-center gap-2.5 sm:gap-3 w-full">
                 {(
                   [

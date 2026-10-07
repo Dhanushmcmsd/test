@@ -8,8 +8,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Intelligence Designed To Evolve",
-  description: "Modular AI platform designed for production.",
+  title: "Lithos",
+  description:
+    "Every layer of sediment records a chapter of our planet. Peel back the crust with Lithos.",
 };
 
 export default function RootLayout({
